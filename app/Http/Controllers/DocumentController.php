@@ -100,4 +100,38 @@ class DocumentController extends Controller
         return redirect()->route('documents.index')
             ->with('success', 'Document deleted successfully.');
     }
+    public function retry(Document $document)
+    {
+        $this->authorize('update', $document);
+
+        if ($document->status !== 'failed') {
+            return back()->with('error', 'Only failed documents can be retried.');
+        }
+
+        $document->update([
+            'status' => 'pending',
+            'error_message' => null,
+        ]);
+
+        try {
+            $this->documentProcessor->processDocument($document);
+            $message = 'Document processing started successfully!';
+        } catch (\Exception $e) {
+            $message = 'Processing failed again: ' . $e->getMessage();
+        }
+
+        return back()->with('success', $message);
+    }
+    public function search(Request $request)
+    {
+        $query = $request->input('query');
+        $results = [];
+
+        if ($query) {
+            $companyId = auth()->user()->company_id;
+            $results = $this->documentProcessor->searchRelevantChunks($query, $companyId, 5);
+        }
+
+        return view('dashboard.documents.search', compact('results', 'query'));
+    }
 }

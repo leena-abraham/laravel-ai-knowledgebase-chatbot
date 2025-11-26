@@ -18,12 +18,21 @@
             </p>
         </div>
         
-        <form method="POST" action="{{ route('documents.destroy', $document) }}" 
-              onsubmit="return confirm('Are you sure you want to delete this document?');">
-            @csrf
-            @method('DELETE')
-            <button type="submit" class="btn btn-danger">Delete Document</button>
-        </form>
+        <div style="display: flex; gap: 12px;">
+            @if($document->status === 'failed')
+                <form method="POST" action="{{ route('documents.retry', $document) }}">
+                    @csrf
+                    <button type="submit" class="btn btn-primary">Retry Processing</button>
+                </form>
+            @endif
+
+            <form method="POST" action="{{ route('documents.destroy', $document) }}" 
+                  onsubmit="return confirm('Are you sure you want to delete this document?');">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="btn btn-danger">Delete Document</button>
+            </form>
+        </div>
     </div>
     
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 32px;">

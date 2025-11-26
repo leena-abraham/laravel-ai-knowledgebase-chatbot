@@ -281,6 +281,16 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a href="{{ route('documents.search') }}" class="{{ request()->routeIs('documents.search') ? 'active' : '' }}">
+                        <span>🔍</span> Search
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ route('widget.embed', auth()->user()->company->slug) }}" target="_blank">
+                        <span>🤖</span> Test Chat Widget
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a href="#" style="opacity: 0.5; cursor: not-allowed;">
                         <span>⚙️</span> Settings
                     </a>

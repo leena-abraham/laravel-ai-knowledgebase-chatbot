@@ -56,6 +56,13 @@ class ChatController extends Controller
                 'sources' => $response['sources'],
             ]);
         } catch (\Exception $e) {
+            \Log::error('Chat processing error: ' . $e->getMessage(), [
+                'company_id' => $chat->company_id,
+                'session_id' => $sessionId,
+                'message' => $validated['message'],
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             return response()->json([
                 'error' => 'Failed to process message. Please try again.',
                 'session_id' => $sessionId,

@@ -27,7 +27,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Documents
+    Route::get('/documents/search', [DocumentController::class, 'search'])->name('documents.search');
     Route::resource('documents', DocumentController::class);
+    Route::post('/documents/{document}/retry', [DocumentController::class, 'retry'])->name('documents.retry');
 
     // Chats (admin view)
     Route::get('/chats', [ChatController::class, 'index'])->name('chats.index');

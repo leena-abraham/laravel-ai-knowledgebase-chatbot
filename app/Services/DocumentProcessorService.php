@@ -25,6 +25,7 @@ class DocumentProcessorService
     public function processDocument(Document $document): void
     {
         try {
+            Log::info('Processing document with service: ' . get_class($this->aiService));
             $document->markAsProcessing();
 
             // Extract text from document

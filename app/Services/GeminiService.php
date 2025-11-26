@@ -57,6 +57,12 @@ class GeminiService
         $startTime = microtime(true);
 
         try {
+            // Handle system instruction if present
+            $systemInstruction = null;
+            if (!empty($messages) && $messages[0]['role'] === 'system') {
+                $systemInstruction = array_shift($messages);
+            }
+
             // Convert OpenAI-style messages to Gemini format
             $contents = array_map(function ($msg) {
                 return [
@@ -67,20 +73,17 @@ class GeminiService
                 ];
             }, $messages);
 
-            // Handle system instruction if present (Gemini handles system prompts differently or as the first user message in some contexts, 
-            // but for v1beta it supports system_instruction in some models, or we can prepend it to the first user message)
-            // For simplicity and compatibility, we'll prepend system prompt to the first user message or context.
-            // However, let's check if the first message is 'system'.
-            if ($contents[0]['role'] === 'system') {
-                $systemMessage = array_shift($contents);
-                // Prepend system instruction to the next user message
-                if (!empty($contents)) {
-                    $contents[0]['parts'][0]['text'] = "System Instruction: " . $systemMessage['parts'][0]['text'] . "\n\n" . $contents[0]['parts'][0]['text'];
-                } else {
-                    // If no user message follows, just send it as user (edge case)
-                    $systemMessage['role'] = 'user';
-                    array_unshift($contents, $systemMessage);
-                }
+            // If we have a system instruction, prepend it to the first user message
+            if ($systemInstruction && !empty($contents)) {
+                $contents[0]['parts'][0]['text'] = "System Instruction: " . $systemInstruction['content'] . "\n\n" . $contents[0]['parts'][0]['text'];
+            } elseif ($systemInstruction) {
+                // If no user message follows, just send it as user (edge case)
+                $contents[] = [
+                    'role' => 'user',
+                    'parts' => [
+                        ['text' => $systemInstruction['content']]
+                    ]
+                ];
             }
 
             $response = Http::withHeaders([
@@ -94,13 +97,25 @@ class GeminiService
             ]);
 
             if ($response->failed()) {
+                Log::error('Google API request failed', [
+                    'status' => $response->status(),
+                    'body' => $response->body()
+                ]);
                 throw new Exception('Google API request failed: ' . $response->body());
             }
 
             $data = $response->json();
             $responseTime = microtime(true) - $startTime;
             
-            $content = $data['candidates'][0]['content']['parts'][0]['text'] ?? '';
+            // Validate response structure
+            if (!isset($data['candidates'][0]['content']['parts'][0]['text'])) {
+                Log::error('Unexpected Google API response structure', [
+                    'response' => $data
+                ]);
+                throw new Exception('Unexpected API response structure');
+            }
+            
+            $content = $data['candidates'][0]['content']['parts'][0]['text'];
             $tokenCount = $data['usageMetadata']['totalTokenCount'] ?? 0;
 
             return [
@@ -111,7 +126,9 @@ class GeminiService
                 'finish_reason' => $data['candidates'][0]['finishReason'] ?? 'unknown',
             ];
         } catch (Exception $e) {
-            Log::error('Google Chat Completion Error: ' . $e->getMessage());
+            Log::error('Google Chat Completion Error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
             throw $e;
         }
     }

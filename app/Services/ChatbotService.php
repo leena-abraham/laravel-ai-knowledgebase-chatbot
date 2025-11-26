@@ -130,12 +130,18 @@ class ChatbotService
      */
     private function buildAIMessages(string $context, array $history, string $currentMessage): array
     {
-        $systemPrompt = "You are a helpful customer support assistant. ";
+        // 1. Define the strict system prompt
+        $systemPrompt = "You are an AI support agent. ";
         
         if (!empty($context)) {
-            $systemPrompt .= "Use the following information from the company's knowledge base to answer questions accurately. If the information isn't in the knowledge base, politely say you don't have that information and offer to help with something else.\n\nKnowledge Base:\n{$context}";
+            $systemPrompt .= "Use ONLY the provided context to answer the user's question. " .
+                           "If the context does not contain the answer, reply exactly: " .
+                           "\"I'm not sure about that, but I'll ask a human agent to assist.\"\n\n" .
+                           "Context:\n{$context}";
         } else {
-            $systemPrompt .= "The company hasn't uploaded any knowledge base documents yet. Politely inform the user and suggest they contact support directly.";
+            // No documents found at all
+            $systemPrompt .= "You do not have any knowledge base information yet. " .
+                           "Reply exactly: \"I'm not sure about that, but I'll ask a human agent to assist.\"";
         }
 
         $messages = [
