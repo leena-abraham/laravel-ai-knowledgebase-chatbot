@@ -52,7 +52,7 @@ class GeminiService
     /**
      * Generate chat completion using Gemini
      */
-    public function createChatCompletion(array $messages, string $model = 'gemini-1.5-flash'): array
+    public function createChatCompletion(array $messages, string $model = 'gemini-2.5-flash'): array
     {
         $startTime = microtime(true);
 
